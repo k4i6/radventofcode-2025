@@ -4,6 +4,7 @@ use good_lp::{Expression, default_solver, Solution, SolverModel, Variable, const
 
 
 const FILE_PATH: &str = "machines.txt";
+const MACHINE_EPSILON: f64 = 0.000001;
 
 struct Machine {
     desired_state: u16,
@@ -86,7 +87,7 @@ fn into_row_echelon_form (coefficient_matrix: &mut Vec<Vec<f64>>, target_vec: &m
     for col in 0..coefficient_matrix.first().unwrap().len() {
         let row_to_swap = match coefficient_matrix.iter().enumerate()
             .skip(row)
-            .find(|(_, row)| row[col].abs() > 0.001) {
+            .find(|(_, row)| row[col].abs() > MACHINE_EPSILON) {
                 Some((row, _)) => row,
                 None => continue,
         };
@@ -144,7 +145,7 @@ fn find_min(coefficient_matrix: &Vec<Vec<f64>>, row: usize, target_vec: &Vec<f64
         .map(|(index,_)| index)
         .collect();
     if unknown_vars.is_empty() {
-        if (target_vec[row] - known_vars.iter().map(|index| (config[*index].unwrap() as f64) * coefficient_matrix[row][*index]).sum::<f64>()).abs() > 0.001 {
+        if (target_vec[row] - known_vars.iter().map(|index| (config[*index].unwrap() as f64) * coefficient_matrix[row][*index]).sum::<f64>()).abs() > MACHINE_EPSILON {
             return current_min;
         }
         return find_min(coefficient_matrix, next_row, target_vec, current_min, max_joltage, config);
@@ -155,10 +156,10 @@ fn find_min(coefficient_matrix: &Vec<Vec<f64>>, row: usize, target_vec: &Vec<f64
     if free_vars.len() == 0 {
         let next_defined_var_val: f64 = target_vec[row] -
             known_vars.iter().map(|index| (config[*index].unwrap() as f64) * coefficient_matrix[row][*index]).sum::<f64>();
-        if next_defined_var_val < -0.001 {
+        if next_defined_var_val < -MACHINE_EPSILON {
             return current_min;
         }
-        if (next_defined_var_val % 1.0).abs() > 0.001 && (1.0 - (next_defined_var_val % 1.0)).abs() > 0.001 {
+        if (next_defined_var_val % 1.0).abs() > MACHINE_EPSILON && (1.0 - (next_defined_var_val % 1.0)).abs() > MACHINE_EPSILON {
             return current_min;
         }
         config[next_defined_var] = Some(next_defined_var_val.round() as u32);
@@ -171,10 +172,10 @@ fn find_min(coefficient_matrix: &Vec<Vec<f64>>, row: usize, target_vec: &Vec<f64
             let next_defined_var_val: f64 = target_vec[row] -
                 combination.iter().map(|(index,val)| (*val as f64) * coefficient_matrix[row][*index]).sum::<f64>() -
                 known_vars.iter().map(|index| (config[*index].unwrap() as f64) * coefficient_matrix[row][*index]).sum::<f64>();
-            if next_defined_var_val < -0.001 {
+            if next_defined_var_val < -MACHINE_EPSILON {
                 return acc;
             }
-            if (next_defined_var_val % 1.0).abs() > 0.001 && (1.0 - (next_defined_var_val % 1.0)).abs() > 0.001 {
+            if (next_defined_var_val % 1.0).abs() > MACHINE_EPSILON && (1.0 - (next_defined_var_val % 1.0)).abs() > MACHINE_EPSILON {
                 return acc;
             }
             new_config[next_defined_var] = Some(next_defined_var_val.round() as u32);
